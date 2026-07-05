@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>nett ⁘ profile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root{
+    --bg:#08080b;
+    --panel:rgba(14,14,20,0.72);
+    --edge:rgba(255,255,255,0.08);
+    --accent:#ff2f56;
+    --accent-2:#7c5cff;
+    --text:#eef0f5;
+    --dim:#8b8d9a;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+  }
+
+  @font-face{
+    font-family:'DispHead';
+    src:local('Arial Black');
+  }
+
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;
+    padding:0;
+    height:100%;
+    width:100%;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:var(--bg);
+    overflow:hidden;
+  }
+
+  /* ---- background ---- */
+  .bg-wrap{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    overflow:hidden;
+  }
+  .bg-wrap img{
+    position:absolute;
+    top:50%;left:50%;
+    width:110%;
+    height:110%;
+    object-fit:cover;
+    transform:translate(-50%,-50%) scale(1.05);
+    filter:saturate(1.15) contrast(1.05) brightness(0.55);
+  }
+  .bg-wrap::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:
+      radial-gradient(circle at 50% 42%, rgba(8,8,11,0.35) 0%, rgba(8,8,11,0.82) 62%, rgba(8,8,11,0.97) 100%);
+    backdrop-filter: blur(1.5px);
+  }
+  .grain{
+    position:fixed;
+    inset:0;
+    z-index:1;
+    pointer-events:none;
+    opacity:0.05;
+    mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ---- gate overlay ---- */
+  #gate{
+    position:fixed;
+    inset:0;
+    z-index:50;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#050506;
+    cursor:pointer;
+    transition:opacity .5s ease;
+  }
+  #gate.hide{
+    opacity:0;
+    pointer-events:none;
+  }
+  #gate .gate-inner{
+    text-align:center;
+    color:var(--dim);
+    font-family:var(--mono);
+    letter-spacing:.3em;
+    font-size:11px;
+    text-transform:uppercase;
+  }
+  #gate .gate-inner span{
+    display:block;
+    color:var(--text);
+    font-size:13px;
+    letter-spacing:.2em;
+    margin-bottom:10px;
+    animation:pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{opacity:1;}
+    50%{opacity:.35;}
+  }
+
+  /* ---- layout ---- */
+  .stage{
+    position:relative;
+    z-index:2;
+    height:100%;
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    perspective:1200px;
+  }
+
+  .card{
+    position:relative;
+    width:340px;
+    border-radius:18px;
+    background:var(--panel);
+    border:1px solid var(--edge);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.02) inset,
+      0 30px 60px -20px rgba(0,0,0,0.7),
+      0 0 40px -10px rgba(255,47,86,0.25);
+    backdrop-filter: blur(18px);
+    overflow:hidden;
+    opacity:0;
+    transform:translateY(14px) scale(.98);
+    transition:opacity .6s ease, transform .6s ease, box-shadow .35s ease, border-color .35s ease;
+    transform-style:preserve-3d;
+    will-change:transform;
+  }
+  .card.show{
+    opacity:1;
+  }
+  .card.hovering{
+    border-color:rgba(255,255,255,0.16);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.04) inset,
+      0 40px 80px -20px rgba(0,0,0,0.8),
+      0 0 60px -6px rgba(255,47,86,0.45),
+      0 0 100px -20px rgba(124,92,255,0.35);
+  }
+
+  .spotlight{
+    position:absolute;
+    inset:0;
+    z-index:5;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .3s ease;
+    background:radial-gradient(circle 180px at var(--mx,50%) var(--my,50%), rgba(255,255,255,0.14), transparent 70%);
+    mix-blend-mode:screen;
+  }
+  .card.hovering .spotlight{ opacity:1; }
+
+  .card-top{
+    height:64px;
+    background:
+      linear-gradient(120deg, rgba(255,47,86,0.35), rgba(124,92,255,0.25) 60%, transparent);
+    position:relative;
+  }
+  .card-top::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:repeating-linear-gradient(115deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 10px);
+  }
+
+  .avatar-ring{
+    width:86px;height:86px;
+    border-radius:50%;
+    margin:-43px auto 0;
+    position:relative;
+    background:conic-gradient(from 180deg, var(--accent), var(--accent-2), var(--accent));
+    padding:3px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.5);
+    animation:spin 6s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .avatar-ring .avatar{
+    width:100%;height:100%;
+    border-radius:50%;
+    background:#111 center/cover no-repeat, url('bg.gif');
+    background-size:220%;
+    background-position:38% 45%;
+    border:3px solid #0c0c10;
+    animation:counterspin 6s linear infinite;
+  }
+  @keyframes counterspin{ to{ transform:rotate(-360deg); } }
+
+  .status-dot{
+    position:absolute;
+    width:16px;height:16px;
+    border-radius:50%;
+    background:#3dff8a;
+    border:3px solid #0c0c10;
+    bottom:-2px;
+    right:calc(50% - 43px + 6px);
+    box-shadow:0 0 8px #3dff8a;
+  }
+
+  .info{
+    text-align:center;
+    padding:14px 22px 0;
+  }
+  .username{
+    font-size:20px;
+    font-weight:800;
+    color:var(--text);
+    letter-spacing:.5px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+  }
+  .username svg{ width:16px; height:16px; flex:none; }
+  .handle{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--dim);
+    letter-spacing:.15em;
+    margin-top:2px;
+    text-transform:uppercase;
+  }
+  .bio{
+    margin:12px 0 0;
+    font-size:12.5px;
+    line-height:1.5;
+    color:#c7c9d4;
+    padding:0 6px;
+  }
+  .bio .accent{ color:var(--accent); font-weight:600; }
+
+  .stats{
+    display:flex;
+    justify-content:center;
+    gap:22px;
+    margin:16px 0 0;
+    font-family:var(--mono);
+  }
+  .stats div{ text-align:center; }
+  .stats .num{ font-size:14px; color:var(--text); font-weight:700; }
+  .stats .bean-num{ display:flex; align-items:center; justify-content:center; gap:4px; color:#fff; }
+  .stats .lbl{ font-size:9px; color:var(--dim); letter-spacing:.12em; text-transform:uppercase; margin-top:2px;}
+
+  .divider{
+    height:1px;
+    background:linear-gradient(90deg, transparent, var(--edge), transparent);
+    margin:18px 20px 0;
+  }
+
+  .socials{
+    display:flex;
+    justify-content:center;
+    gap:12px;
+    padding:16px 20px 0;
+  }
+  .socials a{
+    width:34px;height:34px;
+    border-radius:9px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255,255,255,0.04);
+    border:1px solid var(--edge);
+    color:var(--dim);
+    transition:all .2s ease;
+    text-decoration:none;
+  }
+  .socials a:hover{
+    color:var(--text);
+    border-color:var(--accent);
+    background:rgba(255,47,86,0.12);
+    transform:translateY(-2px);
+  }
+  .socials svg{ width:16px; height:16px; }
+
+  /* ---- now playing ---- */
+  .player{
+    margin:18px 16px 18px;
+    padding:10px 12px;
+    border-radius:12px;
+    background:rgba(0,0,0,0.35);
+    border:1px solid var(--edge);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .play-btn{
+    flex:none;
+    width:34px;height:34px;
+    border-radius:50%;
+    border:1px solid var(--edge);
+    background:linear-gradient(140deg, var(--accent), var(--accent-2));
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    color:#fff;
+  }
+  .play-btn svg{ width:14px; height:14px; }
+
+  .track-info{
+    flex:1;
+    min-width:0;
+    font-family:var(--mono);
+  }
+  .track-title{
+    font-size:11.5px;
+    color:var(--text);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .track-sub{
+    font-size:9.5px;
+    color:var(--dim);
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    margin-top:2px;
+  }
+
+  .viz{
+    flex:none;
+    display:flex;
+    align-items:flex-end;
+    gap:2px;
+    height:20px;
+  }
+  .viz span{
+    width:3px;
+    background:linear-gradient(180deg, var(--accent), var(--accent-2));
+    border-radius:2px;
+    height:4px;
+    transition:height .12s ease;
+  }
+
+  .footer-tag{
+    text-align:center;
+    padding:0 0 14px;
+    font-family:var(--mono);
+    font-size:8.5px;
+    letter-spacing:.25em;
+    color:rgba(255,255,255,0.22);
+    text-transform:uppercase;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .avatar-ring, .avatar-ring .avatar{ animation:none; }
+    .card{ transition:none; }
+  }
+</style>
+</head>
+<body>
+
+  <div id="gate">
+    <div class="gate-inner">
+      <span>◍ click to enter</span>
+      sound on
+    </div>
+  </div>
+
+  <div class="bg-wrap">
+    <img src="bg.gif" alt="">
+  </div>
+  <div class="grain"></div>
+
+  <div class="stage">
+    <div class="card" id="card">
+      <div class="spotlight"></div>
+      <div class="card-top"></div>
+      <div class="avatar-ring">
+        <div class="avatar"></div>
+        <div class="status-dot"></div>
+      </div>
+
+      <div class="info">
+        <div class="username">
+          pine
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 6.9L21 11l-6.6 2.1L12 20l-2.4-6.9L3 11l6.6-2.1L12 2z" fill="#7c5cff"/></svg>
+        </div>
+        <div class="handle">@pine</div>
+        <div class="bio">going up <span class="accent">↑</span></div>
+
+        <div class="stats">
+          <div><div class="num">1.2K</div><div class="lbl">views</div></div>
+          <div><div class="num">04</div><div class="lbl">joined 26</div></div>
+          <div><div class="num bean-num"><svg viewBox="0 0 24 24" fill="#fff" style="width:13px;height:13px;"><path d="M17.3 3.4C14.6 1.9 11 2.3 8.6 4.6 5.9 7.2 4.3 11 5 14.4c.6 3 2.9 5.6 6.4 5.9 3.6.3 7.4-1.6 9.1-5 1.6-3.2 1.4-7.5-1-10.2-.6-.7-1.3-1.3-2.2-1.7zM8.4 12.6c-.3-2 .5-4.4 2.3-6 1.5-1.4 3.4-1.9 5-1.5-1.7.2-3.3 1.1-4.5 2.6-1.4 1.8-1.9 4-1.4 5.9-.6-.2-1.1-.5-1.4-1z"/></svg> bean</div><div class="lbl">rank</div></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="socials">
+        <a href="https://soundcloud.com/pine4pint" title="soundcloud" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.6 9.3c-.2 0-.4.2-.4.4v7.6c0 .2.2.4.4.4s.4-.2.4-.4V9.7c0-.2-.2-.4-.4-.4zm-2 1.5c-.2 0-.4.2-.4.4v5.1c0 .2.2.4.4.4s.4-.2.4-.4v-5.1c0-.2-.2-.4-.4-.4zm-2 1.3c-.2 0-.4.2-.4.4v3.5c0 .2.2.4.4.4s.4-.2.4-.4v-3.5c0-.2-.2-.4-.4-.4zm5.9-4.6c-.2 0-.4.2-.4.4v9.4c0 .2.2.4.4.4s.4-.2.4-.4V7.9c0-.2-.2-.4-.4-.4zm2-1c-.2 0-.4.2-.4.4v10.4c0 .2.2.4.4.4s.4-.2.4-.4V6.9c0-.2-.2-.4-.4-.4zm2.1.6c-.2 0-.4.2-.4.4v9.8c0 .2.2.4.4.4.2 0 .4-.2.4-.4V7.9c0-.2-.2-.4-.4-.4zm5.6 4c-.4-1.7-1.9-2.9-3.6-2.9-.5 0-1 .1-1.4.3-.2.1-.3.2-.3.4v7.2c0 .2.1.3.3.4.1 0 4.9 0 5 0 1.2 0 2.2-1 2.2-2.2 0-1.1-.8-2-1.8-2.2.1-.3.1-.7 0-1z"/></svg>
+        </a>
+      </div>
+
+      <div class="player">
+        <div class="play-btn" id="playBtn">
+          <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+        <div class="track-info">
+          <div class="track-title">Nettspend - kill</div>
+          <div class="track-sub" id="trackSub">paused</div>
+        </div>
+        <div class="viz" id="viz">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <div class="footer-tag">est. 2026 &nbsp;·&nbsp; running club</div>
+
+      <audio id="audio" src="kill.mp3" loop></audio>
+    </div>
+  </div>
+
+<script>
+  const gate = document.getElementById('gate');
+  const card = document.getElementById('card');
+  const audio = document.getElementById('audio');
+  const playBtn = document.getElementById('playBtn');
+  const playIcon = document.getElementById('playIcon');
+  const trackSub = document.getElementById('trackSub');
+  const bars = document.querySelectorAll('.viz span');
+
+  let vizTimer = null;
+
+  function startViz(){
+    stopViz();
+    vizTimer = setInterval(() => {
+      bars.forEach(bar => {
+        const h = 4 + Math.random() * 18;
+        bar.style.height = h + 'px';
+      });
+    }, 110);
+  }
+
+  function stopViz(){
+    if (vizTimer){ clearInterval(vizTimer); vizTimer = null; }
+    bars.forEach(bar => bar.style.height = '4px');
+  }
+
+  function playAudio(){
+    const p = audio.play();
+    if (p && p.catch){
+      p.then(() => {
+        playIcon.innerHTML = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+        trackSub.textContent = 'now playing';
+        startViz();
+      }).catch(() => {
+        trackSub.textContent = 'tap to play';
+      });
+    }
+  }
+
+  function pauseAudio(){
+    audio.pause();
+    playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+    trackSub.textContent = 'paused';
+    stopViz();
+  }
+
+  playBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (audio.paused){ playAudio(); } else { pauseAudio(); }
+  });
+
+  gate.addEventListener('click', () => {
+    gate.classList.add('hide');
+    card.classList.add('show');
+    playAudio();
+  });
+
+  /* ---- hover tilt + spotlight ---- */
+  const stage = document.querySelector('.stage');
+  const maxTilt = 10;
+
+  function handleMove(e){
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const px = x / rect.width;
+    const py = y / rect.height;
+
+    const rotY = (px - 0.5) * maxTilt * 2;
+    const rotX = (0.5 - py) * maxTilt * 2;
+
+    card.style.transform = `translateY(0) scale(1.03) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+    card.style.setProperty('--mx', (px * 100) + '%');
+    card.style.setProperty('--my', (py * 100) + '%');
+  }
+
+  stage.addEventListener('mousemove', (e) => {
+    if (!card.classList.contains('show')) return;
+    const rect = card.getBoundingClientRect();
+    const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+    if (inside){
+      card.classList.add('hovering');
+      handleMove(e);
+    } else if (card.classList.contains('hovering')){
+      card.classList.remove('hovering');
+      card.style.transform = 'translateY(0) scale(1) rotateX(0) rotateY(0)';
+    }
+  });
+
+  stage.addEventListener('mouseleave', () => {
+    card.classList.remove('hovering');
+    card.style.transform = 'translateY(0) scale(1) rotateX(0) rotateY(0)';
+  });
+</script>
+
+</body>
+</html>
